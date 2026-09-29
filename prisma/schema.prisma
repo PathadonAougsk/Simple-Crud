@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum employee_role {
+  Barista
+  Cashier
+  Manager
+}
+
+enum menu_category {
+  Coffee
+  Tea
+  Pastry
+  Dessert
+}
+
+enum order_status {
+  Open
+  Paid
+  Cancelled
+}
+
+model customer {
+  customer_id Int     @id @default(autoincrement())
+  full_name   String  @db.VarChar(80)
+  phone       String? @unique @db.VarChar(20)
+  email       String? @unique @db.VarChar(100)
+
+  orders orders[]
+}
+
+model employee {
+  employee_id Int           @id @default(autoincrement())
+  full_name   String        @db.VarChar(80)
+  role        employee_role
+  hire_date   DateTime      @db.Date
+
+  orders orders[]
+}
+
+model menu_item {
+  item_id      Int           @id @default(autoincrement())
+  item_name    String        @unique @db.VarChar(60)
+  category     menu_category
+  price        Decimal       @db.Decimal(6, 2)
+  is_available Boolean       @default(true)
+
+  order_items order_item[]
+}
+
+model orders {
+  order_id    Int          @id @default(autoincrement())
+  order_date  DateTime     @db.Date
+  status      order_status @default(Open)
+  customer_id Int?
+  employee_id Int
+
+  customer    customer?    @relation(fields: [customer_id], references: [customer_id], onDelete: SetNull)
+  employee    employee     @relation(fields: [employee_id], references: [employee_id], onDelete: Restrict)
+  order_items order_item[]
+}
+
+model order_item {
+  order_id   Int
+  item_id    Int
+  quantity   Int
+  unit_price Decimal @db.Decimal(6, 2)
+
+  order orders    @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
+  item  menu_item @relation(fields: [item_id], references: [item_id], onDelete: Restrict)
+
+  @@id([order_id, item_id])
+}
